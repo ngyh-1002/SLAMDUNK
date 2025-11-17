@@ -6,56 +6,16 @@
 | :--- | :--- |
 | **목표** | Nav2를 이용한 자율 주행 후, RFID 인식, 초음파 센서 감지, 및 음성 출력을 통합하여 복합 임무 수행 |
 | **주요 기능** | `/room_command` 토픽을 통한 동적 목표 설정 및 QR 코드/RFID/초음파 센서 기반 목표 달성 확인 및 음성 알림 |
-| **ROS 버전** | ROS 2 Humble/Iron (작업 환경에 맞게 기재) |
+| **ROS 버전** | ROS 2 Humble |
+
 
 -----
 
-## 🛠️ 2. 빌드 매뉴얼 (Build Manual)
-
-이 패키지들은 ROS 2 워크스페이스 (`ros2_ws`) 내에서 `colcon`을 사용하여 빌드됩니다.
-
-### 2.1. 코드 클론 및 워크스페이스 이동
-
-터미널을 열고 워크스페이스의 `src` 디렉토리로 이동한 후, 프로젝트 저장소를 클론합니다.
-
-```bash
-# 1. src 디렉토리로 이동
-cd ~/ros2_ws/src
-
-# 2. 프로젝트 저장소 클론 (scout_robot은 기존 내용 유지)
-git clone https://github.com/ngyh-1002/SLAMDUNK.git
-```
-
-### 2.2. 패키지 빌드
-
-워크스페이스 루트 디렉토리로 돌아가 `colcon build` 명령을 사용하여 필요한 모든 패키지를 빌드합니다.
-
-```bash
-# 3. 워크스페이스 루트로 이동
-cd ~/ros2_ws
-
-# 4. 모든 패키지 빌드 및 설치 경로 심볼릭 링크 생성
-colcon build --symlink-install
-# 혹은 특정 패키지만 빌드
-# colcon build --packages-select scout_robot uart_bridge speaker_pkg ultrasonic_delivery_sensor --symlink-install
-```
-
-### 2.3. 환경 설정 반영 (Source)
-
-빌드된 패키지를 실행 환경에 반영합니다. 이는 새로운 터미널을 열 때마다 실행해야 합니다.
-
-```bash
-# 5. 환경 설정 반영
-source ~/ros2_ws/install/setup.bash
-```
-
------
-
-## 🚀 3. 노드 실행 명령어
+## 🚀 2. 노드 실행 명령어
 
 **주의:** 네비게이션을 실행하기 전에 ROS 2 환경과 로봇 시뮬레이션 환경(Gazebo, Rviz 등)이 먼저 실행되어 있어야 합니다.
 
-### 3.1. 네비게이션 및 QR 코드 관련 노드 실행
+### 2.1. 네비게이션 및 QR 코드 관련 노드 실행
 
 | 노드 파일 | 패키지 명 | 실행 명령 | 설명 |
 | :--- | :--- | :--- | :--- |
@@ -64,7 +24,7 @@ source ~/ros2_ws/install/setup.bash
 | `amcl_reset_node.py` | `scout_robot` | `ros2 run scout_robot amcl_reset_node.py` | QR 좌표로 AMCL 위치 강제 재설정 (`/initialpose` 발행) |
 | `robot_rotator_node.py`| `scout_robot` | `ros2 run scout_robot robot_rotator_node.py` | QR 인식 실패 시 로봇 45도 회전 및 재검사 요청 |
 
-### 3.2. I/O 및 센서 제어 노드 실행 (추가된 노드)
+### 2.2. I/O 및 센서 제어 노드 실행 (추가된 노드)
 
 | 노드 파일 | 패키지 명 | 실행 명령 | 설명 |
 | :--- | :--- | :--- | :--- |
@@ -72,7 +32,7 @@ source ~/ros2_ws/install/setup.bash
 | `speaker_node.py` | `speaker_pkg` | `ros2 run speaker_pkg speaker_node` | **음성 출력**: `/speaker_command` 토픽에 따라 `.wav` 파일을 재생하여 음성 피드백 제공 (`aplay` 사용) |
 | `ultrasonic_websock_node.py`| `ultrasonic_delivery_sensor`| `ros2 run ultrasonic_delivery_sensor ultrasonic_node` | **초음파 센서**: RFID 성공 후 배달 물품 제거 감지 및 배달 완료 명령 발행 |
 
-### 3.3. 명령 발행 (예시)
+### 2.3. 명령 발행 (예시)
 
 `nav2_commander` 노드가 실행 중일 때, 새로운 터미널에서 아래 명령을 통해 로봇에게 이동 목표를 지정할 수 있습니다.
 
@@ -83,7 +43,7 @@ ros2 topic pub --once /room_command std_msgs/String "data: 'go_room501'" --qos-r
 
 -----
 
-## 4\. 🔄 토픽 기반 상태 제어 알고리즘 (핵심)
+## 3\. 🔄 토픽 기반 상태 제어 알고리즘 (핵심)
 
 본 시스템은 \*\*"구독 $\rightarrow$ 노드 작동 $\rightarrow$ 발행 $\rightarrow$ 노드 작동 중지"\*\*라는 명확한 순차적 임무 흐름을 통해 Nav2의 안정성을 확보하고 복잡한 임무를 분리하여 처리합니다.
 
@@ -107,7 +67,7 @@ ros2 topic pub --once /room_command std_msgs/String "data: 'go_room501'" --qos-r
 
 -----
 
-## 5\. 🗺️ 네비게이션 기본 원리 및 커스텀 구현
+## 4\. 🗺️ 네비게이션 기본 원리 및 커스텀 구현
 
 Nav2 스택은 일반적으로 **RViz의 GUI 상호작용**을 통해 작동합니다.
 
@@ -128,3 +88,45 @@ Nav2와 ROS 2에서 사용하는 표준 \*\*쿼터니언 (Quaternion)\*\*의 $z,
 $$
 \theta = \text{atan2}(2 \cdot q_w \cdot q_z, 1 - 2 \cdot q_z^2)
 $$
+
+-----
+
+## 🛠️ 5. 빌드 매뉴얼 (Build Manual)
+
+이 패키지들은 ROS 2 워크스페이스 (`ros2_ws`) 내에서 `colcon`을 사용하여 빌드됩니다.
+
+### 5.1. 코드 클론 및 워크스페이스 이동
+
+터미널을 열고 워크스페이스의 `src` 디렉토리로 이동한 후, 프로젝트 저장소를 클론합니다.
+
+```bash
+# 1. src 디렉토리로 이동
+cd ~/ros2_ws/src
+
+# 2. 프로젝트 저장소 클론 (scout_robot은 기존 내용 유지)
+git clone https://github.com/ngyh-1002/SLAMDUNK.git
+```
+
+### 5.2. 패키지 빌드
+
+워크스페이스 루트 디렉토리로 돌아가 `colcon build` 명령을 사용하여 필요한 모든 패키지를 빌드합니다.
+
+```bash
+# 3. 워크스페이스 루트로 이동
+cd ~/ros2_ws
+
+# 4. 모든 패키지 빌드 및 설치 경로 심볼릭 링크 생성
+colcon build --symlink-install
+# 혹은 특정 패키지만 빌드
+# colcon build --packages-select scout_robot uart_bridge speaker_pkg ultrasonic_delivery_sensor --symlink-install
+```
+
+### 5.3. 환경 설정 반영 (Source)
+
+빌드된 패키지를 실행 환경에 반영합니다. 이는 새로운 터미널을 열 때마다 실행해야 합니다.
+
+```bash
+# 5. 환경 설정 반영
+source ~/ros2_ws/install/setup.bash
+```
+
