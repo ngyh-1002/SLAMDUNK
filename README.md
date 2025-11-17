@@ -130,3 +130,4 @@ colcon build --symlink-install
 source ~/ros2_ws/install/setup.bash
 ```
 
+[**navigation기능 상세설명**](https://github.com/ngyh-1002/scout_robot)
