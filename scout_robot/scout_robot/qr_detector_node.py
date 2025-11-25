@@ -9,6 +9,7 @@ import numpy as np
 from ament_index_python.packages import get_package_share_directory
 import os
 import yaml
+import json
 
 # --- 토픽 및 상수 정의 ---
 QR_COMMAND_TOPIC = "/qr_check_command"
@@ -235,10 +236,26 @@ class QrDetector(Node):
                 if is_match:
                     
                     if not self.is_qr_detected:
+
+                        speaker_msg = String()
+                        room = decoded_data
+                        command_msg = None
+
+                        # JSON 형태로 명령 + 객실 정보를 함께 전송
+                        if room == "home":
+                            command_msg = "home"
+                        else:
+                            command_msg = "arrival"
+                            
+                        payload = {
+                            "command": command_msg,
+                            "room": room
+                        }
+                        speaker_msg.data = json.dumps(payload, ensure_ascii=False)
+
+                        self.speaker_pub.publish(speaker_msg)
                         
                         # 목적지 도착 음성 출력 코드 날리기
-                        speaker_msg = String()
-                        speaker_msg.data = "arrival"
                         self.speaker_pub.publish(speaker_msg)
                         self.get_logger().info("🔊 Published Speaker Command: arrival")
                         
